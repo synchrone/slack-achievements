@@ -35,9 +35,8 @@ export default (controller: Botkit) => {
                 .groupBy(['to_user', 'reaction'])
                 .having('count > 1')
 
-            console.log(reactionsQuery.getQuery())
-
             const reactions = await reactionsQuery.execute()
+
             const users = {} as { [user: string]: { [reaction: string]: number } }
             for (const entry of reactions) {
                 users[entry.toUser] = users[entry.toUser] || {}
