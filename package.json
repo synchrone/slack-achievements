@@ -1,0 +1,31 @@
+{
+  "name": "botkit-slack-achievements",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/bot.js",
+  "scripts": {
+    "start": "node dist/bot.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@mikro-orm/core": "^4.2.3",
+    "@mikro-orm/sqlite": "^4.2.3",
+    "botbuilder-adapter-slack": "^1.0.13",
+    "botbuilder-storage-mongodb": "^0.9.5",
+    "botkit": "^4.10.0",
+    "botkit-plugin-cms": "^1.0.3",
+    "dotenv": "^7.0.0"
+  },
+  "devDependencies": {
+    "@mikro-orm/cli": "^4.2.3",
+    "ts-node": "^9.0.0",
+    "typescript": "^4.0.3"
+  },
+  "mikro-orm": {
+    "useTsNode": true,
+    "configPaths": [
+      "./mikro-orm.config.ts",
+      "./dist/mikro-orm.config.js"
+    ]
+  }
+}
