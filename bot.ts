@@ -1,7 +1,6 @@
-import { Botkit } from "botkit";
-
-const { BotkitCMSHelper } = require('botkit-plugin-cms');
-const { SlackAdapter, SlackMessageTypeMiddleware, SlackEventMiddleware } = require('botbuilder-adapter-slack');
+import { Botkit } from "botkit"
+import { BotkitCMSHelper } from 'botkit-plugin-cms'
+import { SlackAdapter, SlackMessageTypeMiddleware, SlackEventMiddleware } from 'botbuilder-adapter-slack'
 
 // Load process.env values from .env file
 require('dotenv').config();
@@ -23,8 +22,8 @@ const adapter = new SlackAdapter({
 
     // functions required for retrieving team-specific info
     // for use in multi-team apps
-    getTokenForTeam: getTokenForTeam,
-    getBotUserByTeam: getBotUserByTeam,
+    getTokenForTeam: getTokenForTeam as any,
+    getBotUserByTeam: getBotUserByTeam as any,
 });
 
 // Use SlackEventMiddleware to emit events that match their original Slack event types.
@@ -109,25 +108,25 @@ if (process.env.USERS) {
     userCache = JSON.parse(process.env.USERS);
 }
 
-async function getTokenForTeam(teamId) {
+async function getTokenForTeam(teamId: string) {
     if (tokenCache[teamId]) {
         return new Promise((resolve) => {
             setTimeout(function() {
                 resolve(tokenCache[teamId]);
             }, 150);
-        });
+        }) as Promise<string>;
     } else {
         console.error('Team not found in tokenCache: ', teamId);
     }
 }
 
-async function getBotUserByTeam(teamId) {
+async function getBotUserByTeam(teamId: string) {
     if (userCache[teamId]) {
         return new Promise((resolve) => {
             setTimeout(function() {
                 resolve(userCache[teamId]);
             }, 150);
-        });
+        }) as Promise<string>;
     } else {
         console.error('Team not found in userCache: ', teamId);
     }

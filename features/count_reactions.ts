@@ -47,29 +47,8 @@ export class Reaction {
     }
 }
 
-let orm: MikroORM<AbstractSqlDriver>
+export let orm: MikroORM<AbstractSqlDriver>
 MikroORM.init().then(o => orm = o as any)
-
-function blockToPlain(block: any): string {
-    if(block.elements){
-        return block.elements.map(e => blockToPlain(e).trim()).join(' ')
-    }
-    if(block.type == 'user'){
-        return `<@${block.user_id}>`
-    }
-    if(block.type == 'text'){
-        return block.text
-    }
-    return `{${block.type}}`
-}
-
-function messagePlainText(message: BotkitMessage){
-    if(message.text){ return message.text}
-
-    if(message.blocks){
-        return message.blocks.map(b => blockToPlain(b)).join(' ')
-    }
-}
 
 export default (controller: Botkit) => {
     controller.on('reaction_removed', async (bot, message) => {
@@ -84,42 +63,5 @@ export default (controller: Botkit) => {
         }
 
         await orm.em.persistAndFlush(new Reaction(reaction.user, reaction.item_user, reaction.reaction, reaction.channel, reaction.incoming_message.timestamp));
-    })
-
-    controller.on('app_mention', async (bot, message) => {
-        const plainMessage = messagePlainText(message)
-        if (plainMessage.indexOf('?') || -1 > -1) {
-            const reactions = await orm.em.createQueryBuilder(Reaction)
-                .select('count(0) as count')
-                .addSelect('to_user')
-                .addSelect('reaction')
-                .where('created_at > ?', [(+new Date()) - 7 * 24 * 60 * 60 * 1000])
-                .groupBy(['to_user', 'reaction'])
-                .execute()
-
-            const users = {} as {[user: string]: {[reaction: string]: number}}
-            for(const entry of reactions){
-                users[entry.toUser] = users[entry.toUser] || {}
-                users[entry.toUser][entry.reaction] = entry.count
-            }
-
-            const leaderboard = Object.entries(users).map(([user, reactions]) =>
-                `<@${user}>: ${Object.entries(reactions)
-                    
-                    .map(([reaction, count]) => `x${count} :${reaction}:`).join(', ')}`
-            ).join('\n')
-
-            await bot.reply(message, {
-                "blocks": [
-                    {
-                        "type": "section",
-                        "text": {
-                            "type": "mrkdwn",
-                            "text": leaderboard
-                        }
-                    }
-                ]
-            })
-        }
     })
 }
