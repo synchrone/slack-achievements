@@ -1,7 +1,6 @@
-import {Entity, PrimaryKey, Property} from '@mikro-orm/core'
-import { MikroORM } from '@mikro-orm/core/MikroORM'
-import { AbstractSqlDriver } from '@mikro-orm/sqlite'
 import {Botkit, BotkitMessage, BotWorker} from 'botkit'
+import {orm} from "../bot";
+import {Reaction} from "../models/reaction";
 
 interface ReactionEvent extends BotkitMessage {
     team: string
@@ -12,35 +11,6 @@ interface ReactionEvent extends BotkitMessage {
         ts: string  // <ts>.<msec> // the chat message this reaction refers to
     }
 }
-
-@Entity()
-export class Reaction {
-    @PrimaryKey()
-    id!: number
-
-    @Property()
-    public user!: string
-
-    @Property()
-    public toUser!: string
-
-    @Property()
-    public reaction!: string
-
-    @Property()
-    public channel!: string
-
-    @Property({ onUpdate: () => new Date() })
-    public createdAt!: Date
-
-    public constructor(props: Partial<Reaction>) {
-        Object.assign(this, props)
-    }
-}
-
-export let orm: MikroORM<AbstractSqlDriver>
-MikroORM.init().then(o => orm = o as any)
-
 
 export default (controller: Botkit) => {
     async function handleReaction(bot: BotWorker, message: BotkitMessage){

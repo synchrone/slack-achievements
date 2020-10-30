@@ -1,0 +1,16 @@
+version: '2'
+
+services:
+  bot:
+   build: .
+   ports:
+   - '3000'
+   environment:
+   - DB_NAME
+   - CLIENT_ID
+   - CLIENT_SECRET
+   - CLIENT_SIGNING_SECRET
+   - VERIFICATION_TOKEN
+   - REDIRECT_URI
+   volumes:
+   - ./data:/code/data/

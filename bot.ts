@@ -1,29 +1,32 @@
-import { Botkit } from "botkit"
-import { BotkitCMSHelper } from 'botkit-plugin-cms'
-import { SlackAdapter, SlackMessageTypeMiddleware, SlackEventMiddleware } from 'botbuilder-adapter-slack'
+import {MikroORM} from "@mikro-orm/core/MikroORM";
+import {AbstractSqlDriver} from "@mikro-orm/sqlite";
+import {SlackAdapter, SlackEventMiddleware, SlackMessageTypeMiddleware} from 'botbuilder-adapter-slack'
+import {Botkit} from "botkit"
+import {BotkitCMSHelper} from 'botkit-plugin-cms'
+import {Installation} from "./models/installation";
 
 // Load process.env values from .env file
 require('dotenv').config();
 
+export let orm: MikroORM<AbstractSqlDriver>
+MikroORM.init().then(o => orm = o as any)
 
 const adapter = new SlackAdapter({
     // parameters used to secure webhook endpoint
     verificationToken: process.env.VERIFICATION_TOKEN,
-    clientSigningSecret: process.env.CLIENT_SIGNING_SECRET,
-
-    // auth token for a single-team app
-    botToken: process.env.BOT_TOKEN,
 
     // credentials used to set up oauth for multi-team apps
     clientId: process.env.CLIENT_ID,
     clientSecret: process.env.CLIENT_SECRET,
-    scopes: ['bot'],
+    clientSigningSecret: process.env.CLIENT_SIGNING_SECRET,
+    scopes: ['app_mentions:read','reactions:read','chat:write'],
     redirectUri: process.env.REDIRECT_URI,
+    oauthVersion: 'v2',
 
     // functions required for retrieving team-specific info
     // for use in multi-team apps
-    getTokenForTeam: getTokenForTeam as any,
-    getBotUserByTeam: getBotUserByTeam as any,
+    getTokenForTeam: getTokenForTeam,
+    getBotUserByTeam: getBotUserByTeam,
 });
 
 // Use SlackEventMiddleware to emit events that match their original Slack event types.
@@ -64,12 +67,17 @@ controller.ready(() => {
 
 });
 
-
-
 controller.webserver.get('/', (req, res) => {
-    res.send(`This app is running Botkit ${ controller.version }.`);
+    res.send(`
+    This app is running Botkit ${ controller.version }.
+    <br />
+    <a href="/install">
+    <img alt="Add to Slack" height="40" width="139" 
+        src="https://platform.slack-edge.com/img/add_to_slack.png" 
+        srcSet="https://platform.slack-edge.com/img/add_to_slack.png 1x, https://platform.slack-edge.com/img/add_to_slack@2x.png 2x" 
+    /></a>
+    `);
 });
-
 
 controller.webserver.get('/install', (req, res) => {
     // getInstallLink points to slack's oauth endpoint and includes clientId and scopes
@@ -79,17 +87,8 @@ controller.webserver.get('/install', (req, res) => {
 controller.webserver.get('/install/auth', async (req, res) => {
     try {
         const results = await controller.adapter.validateOauthCode(req.query.code);
-
-        console.log('FULL OAUTH DETAILS', results);
-
-        // Store token by team in bot state.
-        tokenCache[results.team_id] = results.bot.bot_access_token;
-
-        // Capture team to bot id
-        userCache[results.team_id] =  results.bot.bot_user_id;
-
-        res.json('Success! Bot installed.');
-
+        orm.em.persistAndFlush(new Installation({teamId:results.team.id, botAccessToken: results.access_token, botUserId: results.bot_user_id}));
+        res.send('Success! Bot installed.');
     } catch (err) {
         console.error('OAUTH ERROR:', err);
         res.status(401);
@@ -97,38 +96,12 @@ controller.webserver.get('/install/auth', async (req, res) => {
     }
 });
 
-let tokenCache = {};
-let userCache = {};
-
-if (process.env.TOKENS) {
-    tokenCache = JSON.parse(process.env.TOKENS);
-}
-
-if (process.env.USERS) {
-    userCache = JSON.parse(process.env.USERS);
-}
-
 async function getTokenForTeam(teamId: string) {
-    if (tokenCache[teamId]) {
-        return new Promise((resolve) => {
-            setTimeout(function() {
-                resolve(tokenCache[teamId]);
-            }, 150);
-        }) as Promise<string>;
-    } else {
-        console.error('Team not found in tokenCache: ', teamId);
-    }
+    const installation = await orm.em.findOneOrFail(Installation, {teamId: teamId})
+    return installation.botAccessToken;
 }
 
 async function getBotUserByTeam(teamId: string) {
-    if (userCache[teamId]) {
-        return new Promise((resolve) => {
-            setTimeout(function() {
-                resolve(userCache[teamId]);
-            }, 150);
-        }) as Promise<string>;
-    } else {
-        console.error('Team not found in userCache: ', teamId);
-    }
+    const installation = await orm.em.findOneOrFail(Installation, {teamId: teamId})
+    return installation.botUserId;
 }
-

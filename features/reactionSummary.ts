@@ -1,6 +1,6 @@
 import {Botkit, BotkitMessage} from "botkit";
-import {orm, Reaction} from "./count_reactions";
-
+import {orm} from "../bot";
+import {Reaction} from "../models/reaction";
 
 function messagePlainText(message: BotkitMessage){
     if(message.text){ return message.text}
@@ -26,12 +26,13 @@ function blockToPlain(block: any): string {
 export default (controller: Botkit) => {
     controller.on('app_mention', async (bot, message) => {
         const plainMessage = messagePlainText(message)
-        if (plainMessage.indexOf('?') || -1 > -1) {
+        if (plainMessage.indexOf('?') > -1) {
             const reactionsQuery = orm.em.createQueryBuilder(Reaction)
                 .select('count(0) as count')
                 .addSelect('to_user')
                 .addSelect('reaction')
                 .where('created_at > ?', [(+new Date()) - 7 * 24 * 60 * 60 * 1000])
+                .andWhere({channel: message.channel})
                 .groupBy(['to_user', 'reaction'])
                 .having('count > 1')
 
