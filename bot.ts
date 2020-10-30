@@ -87,7 +87,12 @@ controller.webserver.get('/install', (req, res) => {
 controller.webserver.get('/install/auth', async (req, res) => {
     try {
         const results = await controller.adapter.validateOauthCode(req.query.code);
-        await orm.em.persistAndFlush(new Installation({teamId:results.team.id, botAccessToken: results.access_token, botUserId: results.bot_user_id}));
+        await orm.em.transactional(async em => {
+            await em.nativeDelete(Installation, {teamId:results.team.id})
+            await em.persist(new Installation({teamId:results.team.id,
+                botAccessToken: results.access_token, botUserId: results.bot_user_id}));
+        })
+
         res.send('Success! Bot installed.');
     } catch (err) {
         console.error('OAUTH ERROR:', err);
