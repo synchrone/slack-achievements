@@ -38,6 +38,11 @@ export default (controller: Botkit) => {
 
             const reactions = await reactionsQuery.execute()
 
+            if(reactions.length < 1){
+                await bot.reply(message, `I'm just gonna observe for a little longer`)
+                return
+            }
+
             const users = {} as { [user: string]: { [reaction: string]: number } }
             for (const entry of reactions) {
                 users[entry.toUser] = users[entry.toUser] || {}
