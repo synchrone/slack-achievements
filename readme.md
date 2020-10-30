@@ -1,10 +1,9 @@
-# Botkit Starter Kit
+## Slack Achievements Bot
 
-This is a Botkit starter kit for slack, created with the [Yeoman generator](https://github.com/howdyai/botkit/tree/master/packages/generator-botkit#readme).
+Ребята! У меня случилась идея поощрять активных членов сообщества, хотя бы просто благодарностью и признанием их заслуг в регулярном оповещении.
 
-To complete the configuration of this bot, make sure to update the included `.env` file with your platform tokens and credentials.
+@Achievements Bot будет собирать пальцы вверх и прочие реакции, и по запросу сможет вывести лидерборд по эмоджи за последнюю неделю.
 
-[Botkit Docs](https://botkit.ai/docs/v4)
+В аппсторе слэка есть несколько альтернатив, но все они запрашивают слишком широкий доступ к именам и емейлам пользователей, хотя необходимости в этом нет, поэтому мой бот работает без доступа к приватным данным.
 
-This bot is powered by [a folder full of modules](https://botkit.ai/docs/v4/core.html#organize-your-bot-code). 
-Edit the samples, and add your own in the [features/](features/) folder.
+Будьте восхитительны друг к другу, а потом посмотрим кто у нас самый реальный MVP.

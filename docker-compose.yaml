@@ -3,6 +3,7 @@ version: '2'
 services:
   bot:
    build: .
+   restart: unless-stopped
    ports:
    - '127.0.0.1:32779:3000'
    environment:
