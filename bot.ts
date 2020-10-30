@@ -25,8 +25,8 @@ const adapter = new SlackAdapter({
 
     // functions required for retrieving team-specific info
     // for use in multi-team apps
-    getTokenForTeam: getTokenForTeam,
-    getBotUserByTeam: getBotUserByTeam,
+    getTokenForTeam: async teamId => (await getInstallation(teamId)).botAccessToken,
+    getBotUserByTeam: async teamId => (await getInstallation(teamId)).botUserId,
 });
 
 // Use SlackEventMiddleware to emit events that match their original Slack event types.
@@ -87,7 +87,7 @@ controller.webserver.get('/install', (req, res) => {
 controller.webserver.get('/install/auth', async (req, res) => {
     try {
         const results = await controller.adapter.validateOauthCode(req.query.code);
-        orm.em.persistAndFlush(new Installation({teamId:results.team.id, botAccessToken: results.access_token, botUserId: results.bot_user_id}));
+        await orm.em.persistAndFlush(new Installation({teamId:results.team.id, botAccessToken: results.access_token, botUserId: results.bot_user_id}));
         res.send('Success! Bot installed.');
     } catch (err) {
         console.error('OAUTH ERROR:', err);
@@ -96,12 +96,12 @@ controller.webserver.get('/install/auth', async (req, res) => {
     }
 });
 
-async function getTokenForTeam(teamId: string) {
-    const installation = await orm.em.findOneOrFail(Installation, {teamId: teamId})
-    return installation.botAccessToken;
-}
-
-async function getBotUserByTeam(teamId: string) {
-    const installation = await orm.em.findOneOrFail(Installation, {teamId: teamId})
-    return installation.botUserId;
+const teamCache = new Map<string, {botAccessToken:string, botUserId: string}>()
+async function getInstallation(teamId: string) {
+    let installation = teamCache.get(teamId)
+    if (!installation) {
+        installation = await orm.em.findOneOrFail(Installation, {teamId: teamId})
+        teamCache.set(teamId, installation)
+    }
+    return installation;
 }

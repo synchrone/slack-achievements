@@ -4,13 +4,13 @@ services:
   bot:
    build: .
    ports:
-   - '3000'
+   - '127.0.0.1:32779:3000'
    environment:
-   - DB_NAME
    - CLIENT_ID
    - CLIENT_SECRET
    - CLIENT_SIGNING_SECRET
    - VERIFICATION_TOKEN
    - REDIRECT_URI
+   - DB_NAME=/code/data/bot.sqlite
    volumes:
    - ./data:/code/data/
