@@ -1,8 +1,10 @@
+import {QueryOrder} from "@mikro-orm/core";
 import {SlackAdapter, SlackBotWorker} from "botbuilder-adapter-slack";
 import {WebClient as SlackApi} from '@slack/web-api'
 import {Botkit, BotkitMessage} from "botkit";
-import {orm} from "../bot";
+import _ from 'lodash'
 import {Reaction} from "../models/reaction";
+import { orm } from "../mikro-orm.config";
 
 const DAY = 24 * 60 * 60 * 1000;
 const WEEK = 7 * DAY;
@@ -29,7 +31,8 @@ function blockToPlain(block: any): string {
     return `{${block.type}}`
 }
 
-async function getReactionSummary(timeframe: number, channel?: string) {
+type ReactionSummaryItem = Pick<Reaction, 'toUser' | 'reaction'> & {count:number}
+async function getReactionSummary(timeframe: number, channel?: string): Promise<ReactionSummaryItem[]> {
     let reactionsQuery = orm.em.createQueryBuilder(Reaction)
         .select('count(0) as count')
         .addSelect('to_user')
@@ -43,20 +46,16 @@ async function getReactionSummary(timeframe: number, channel?: string) {
     }
 
     const reactions = await reactionsQuery.execute()
-    return reactions;
+    return reactions
 }
 
-function renderLeaderboard(reactions) {
-    const users = {} as { [user: string]: { [reaction: string]: number } }
-    for (const entry of reactions) {
-        users[entry.toUser] = users[entry.toUser] || {}
-        users[entry.toUser][entry.reaction] = entry.count
-    }
+export function renderLeaderboard(reactions: ReactionSummaryItem[]) {
+    const userReactions = _.groupBy(reactions, r => r.toUser)
+    const orderedUserReactions = _.mapValues(userReactions, ra => _.reverse(_.sortBy(ra, r => r.count)))
+    const leaders = _.reverse(_.sortBy(_.toPairs(orderedUserReactions), ([user, ra]) => _.sumBy(ra, r => r.count)))
 
-    const leaderboard = Object.entries(users).map(([user, reactions]) =>
-        `<@${user}>: ${Object.entries(reactions).map(([reaction, count]) =>
-            `:${reaction}: (${count})`)
-            .join(', ')}`
+    const leaderboard = leaders.map(([user, reactions]) =>
+        `<@${user}>: ${reactions.map(r => `:${r.reaction}: (${r.count})`).join(', ')}`
     ).join('\n')
 
     return leaderboard

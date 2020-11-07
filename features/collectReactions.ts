@@ -1,5 +1,5 @@
 import {Botkit, BotkitMessage, BotWorker} from 'botkit'
-import {orm} from "../bot";
+import { orm } from '../mikro-orm.config';
 import {Reaction} from "../models/reaction";
 
 interface ReactionEvent extends BotkitMessage {

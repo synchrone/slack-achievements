@@ -1,15 +1,12 @@
-import {MikroORM} from "@mikro-orm/core/MikroORM";
-import {AbstractSqlDriver} from "@mikro-orm/sqlite";
 import {SlackAdapter, SlackEventMiddleware, SlackMessageTypeMiddleware} from 'botbuilder-adapter-slack'
 import {Botkit} from "botkit"
 import {BotkitCMSHelper} from 'botkit-plugin-cms'
+import {orm, startORM} from "./mikro-orm.config";
 import {Installation} from "./models/installation";
 
 // Load process.env values from .env file
 require('dotenv').config();
-
-export let orm: MikroORM<AbstractSqlDriver>
-MikroORM.init().then(o => orm = o as any)
+startORM();
 
 const adapter = new SlackAdapter({
     // parameters used to secure webhook endpoint
