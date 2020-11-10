@@ -14,6 +14,9 @@ export class Installation {
     @Property()
     public botUserId!: string
 
+    @Property()
+    public authedUserId!: string
+
     @Property({onCreate: () => new Date()})
     public createdAt!: Date
 
