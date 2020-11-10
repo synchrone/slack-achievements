@@ -4,8 +4,8 @@ import {Reaction} from "../models/reaction";
 
 interface ReactionEvent extends BotkitMessage {
     team: string
-    item_user: string
-    reaction: string
+    item_user: string // original message's author
+    reaction: string // the emoji name
     event_ts: string // <ts>.<msec> // this event's timestamp
     item: {
         ts: string  // <ts>.<msec> // the chat message this reaction refers to

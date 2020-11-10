@@ -15,7 +15,7 @@ const adapter = new SlackAdapter({
     clientId: process.env.CLIENT_ID,
     clientSecret: process.env.CLIENT_SECRET,
     clientSigningSecret: process.env.CLIENT_SIGNING_SECRET,
-    scopes: ['app_mentions:read','reactions:read','chat:write'],
+    scopes: ['app_mentions:read','reactions:read','chat:write', 'im:history'],
     redirectUri: process.env.REDIRECT_URI,
     oauthVersion: 'v2',
 

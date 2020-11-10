@@ -1,8 +1,8 @@
-import { renderLeaderboard } from "../features/reactionSummary"
+import {reactionLeaders, renderLeaderboard } from "../features/reactionSummary"
 
 describe('Reactions Summary', () => {
     test('renderLeaderboard', async () => {
-        const lb = renderLeaderboard([
+        const lb = renderLeaderboard(reactionLeaders([
                 {
                     "count": 26,
                     "toUser": "U0FE0GSDP",
@@ -53,7 +53,7 @@ describe('Reactions Summary', () => {
                     "toUser": "UK0N1M53N",
                     "reaction": "heavy_plus_sign"
                 }
-        ])
+        ]))
         expect(lb).not.toBe(undefined)
     })
 })
