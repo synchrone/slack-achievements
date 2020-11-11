@@ -7,6 +7,7 @@ services:
    ports:
    - '127.0.0.1:32779:3000'
    environment:
+   - DEBUG=botkit*
    - CLIENT_ID
    - CLIENT_SECRET
    - CLIENT_SIGNING_SECRET

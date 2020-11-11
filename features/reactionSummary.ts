@@ -35,9 +35,15 @@ export function reactionLeaders(reactions: ReactionSummaryItem[]){
 }
 
 export function renderLeaderboard(leaders: Array<[string, ReactionSummaryItem[]]>, limit?: number) {
-    const leaderboard = leaders.map(([user, reactions]) =>
-        `<@${user}>: ${reactions.map(r => `:${r.reaction}: (${r.count})`).join(', ')}`
-    ).join('\n')
+    let leaderboard = ''
+    for(const [user, reactions] of leaders){
+        let chunk = `\n<@${user}>: ${reactions.map(r => `:${r.reaction}: (${r.count})`).join(', ')}`;
+
+        if(leaderboard.length + chunk.length > 2900){
+            break;
+        }
+        leaderboard += chunk
+    }
 
     return leaderboard
 }
