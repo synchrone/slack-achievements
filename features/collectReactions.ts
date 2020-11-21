@@ -26,8 +26,9 @@ export default (controller: Botkit) => {
             channel: event.channel,
             user: event.user,
             toUser: event.item_user,
+            toItem: event.item.ts,
             reaction: event.reaction,
-            createdAt: new Date(parseFloat(event.item.ts)*1000)
+            createdAt: new Date(parseFloat(event.event_ts)*1000)
         }
 
         if(message.type === 'reaction_added'){

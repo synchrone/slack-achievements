@@ -1,6 +1,7 @@
-import {Entity, PrimaryKey, Property} from "@mikro-orm/core";
+import {Entity, PrimaryKey, Property, Unique} from "@mikro-orm/core";
 
 @Entity()
+@Unique({properties: ['channel', 'user', 'toUser', 'toItem', 'reaction']})
 export class Reaction {
     @PrimaryKey()
     id!: number
@@ -12,12 +13,15 @@ export class Reaction {
     public toUser!: string
 
     @Property()
+    public toItem!: string
+
+    @Property()
     public reaction!: string
 
     @Property()
     public channel!: string
 
-    @Property({onCreate: () => new Date()})
+    @Property({onCreate: (e: Reaction) => e.createdAt || new Date()})
     public createdAt!: Date
 
     public constructor(props: Partial<Reaction>) {
