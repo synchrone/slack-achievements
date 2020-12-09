@@ -11,14 +11,14 @@ const WEEK = 7 * DAY;
 const MONTH = 4 * WEEK;
 
 type ReactionSummaryItem = Pick<Reaction, 'toUser' | 'reaction'> & {count:number}
-async function getReactionSummary(timeframe: number, channel?: string): Promise<ReactionSummaryItem[]> {
+async function getReactionSummary(timeframe: number, minReactions: number, channel?: string): Promise<ReactionSummaryItem[]> {
     let reactionsQuery = orm.em.createQueryBuilder(Reaction)
         .select('count(0) as count')
         .addSelect('to_user')
         .addSelect('reaction')
         .where('created_at > ?', [(+new Date()) - timeframe])
         .groupBy(['to_user', 'reaction'])
-        .having('count > 1')
+        .having('count > ?', [minReactions])
 
     if(channel){
         reactionsQuery = reactionsQuery.andWhere({channel});
@@ -34,12 +34,12 @@ export function reactionLeaders(reactions: ReactionSummaryItem[]){
     return leaders
 }
 
-export function renderLeaderboard(leaders: Array<[string, ReactionSummaryItem[]]>, limit?: number) {
+export function renderLeaderboard(leaders: Array<[string, ReactionSummaryItem[]]>, limit: number = 2900) {
     let leaderboard = ''
     for(const [user, reactions] of leaders){
         let chunk = `\n<@${user}>: ${reactions.map(r => `:${r.reaction}: (${r.count})`).join(', ')}`;
 
-        if(leaderboard.length + chunk.length > 2900){
+        if(leaderboard.length + chunk.length > limit){
             break;
         }
         leaderboard += chunk
@@ -52,15 +52,21 @@ export default (controller: Botkit) => {
     controller.on('app_mention', async (bot, message) => {
         const plainMessage = messagePlainText(message)
         if (plainMessage.indexOf('?') < 0 || plainMessage.indexOf('help') > -1) {
-            await bot.reply(message, `Usage: @achievements [global] <monthly|weekly> *?*`)
+            await bot.reply(message, `Usage: @achievements [global] <monthly|weekly> [minCount=number,1-100] *?*`)
             return
         }
 
-        const channel = plainMessage.indexOf('global') > -1 ? undefined : message.channel;
-        const timeframe = plainMessage.indexOf('monthly') > -1 ? MONTH : WEEK;
-        const header = `*This ${timeframe === MONTH ? 'Month' : 'Week'}'s MVPs ${channel ? `in <#${channel}>` : ''}*\n\n`;
+        const channel = plainMessage.indexOf('global') > -1 ? undefined : message.channel
+        const timeframe = plainMessage.indexOf('monthly') > -1 ? MONTH : WEEK
 
-        const reactions = await getReactionSummary(timeframe, channel);
+        let minCount = timeframe == MONTH ? 16 : 4
+        try{
+            minCount = Math.min(Math.max(parseInt(plainMessage.match(/minCount=(\d+)/i)[1]), 1), 100)
+        }catch (e){}
+
+        const header = `*This ${timeframe === MONTH ? 'Month' : 'Week'}'s MVPs ${channel ? `in <#${channel}>` : ''}*\n\n`
+
+        const reactions = await getReactionSummary(timeframe, minCount, channel)
         if (reactions.length < 1) {
             await bot.reply(message, `I'm just gonna observe for a little longer`)
             return
