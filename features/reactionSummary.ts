@@ -1,16 +1,14 @@
-import {SlackBotWorker} from "botbuilder-adapter-slack";
 import {Botkit} from "botkit";
 import _ from 'lodash'
 import {orm} from "../mikro-orm.config";
 import {Reaction} from "../models/reaction";
-import {getSettings} from "../util/settings";
-import {messagePlainText, slackMarkdownResponse, SlackPostedMessage} from "../util/slackMessaging";
+import {messagePlainText, reply} from "../util/slackMessaging";
 
 const DAY = 24 * 60 * 60 * 1000;
 const WEEK = 7 * DAY;
 const MONTH = 4 * WEEK;
 
-type ReactionSummaryItem = Pick<Reaction, 'toUser' | 'reaction'> & {count:number}
+export type ReactionSummaryItem = Pick<Reaction, 'toUser' | 'reaction'> & {count:number}
 async function getReactionSummary(timeframe: number, minReactions: number, channel?: string): Promise<ReactionSummaryItem[]> {
     let reactionsQuery = orm.em.createQueryBuilder(Reaction)
         .select('count(0) as count')
@@ -75,17 +73,6 @@ export default (controller: Botkit) => {
         const leaders = reactionLeaders(reactions)
         const leaderboard = renderLeaderboard(leaders)
         let response = header + leaderboard;
-
-        if (bot instanceof SlackBotWorker) {
-            const outputChannel = (await getSettings(message.team)).get('outputChannel');
-            if (outputChannel && outputChannel !== message.channel) {
-                const posted = await bot.say({channel: outputChannel, ...slackMarkdownResponse(response)}) as SlackPostedMessage
-                await bot.replyInThread(message, `<https://app.slack.com/client/${message.team}/${outputChannel}/${posted.id}|Replied> in <#${outputChannel}>`)
-            } else {
-                await bot.replyInThread(message, response)
-            }
-        } else {
-            await bot.reply(message, response);
-        }
+        await reply(bot, message, response);
     })
 }
