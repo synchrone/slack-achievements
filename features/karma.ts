@@ -9,8 +9,14 @@ export default (controller: Botkit) => {
         const command = messagePlainText(message)
 
         if(command.indexOf('karma') >-1  && command.indexOf('?') >-1 ){
-            const mentionedReactions = [...command.matchAll(/:([+-_a-z0-9]+?):/g)].map(m => m[1])
+            let reactionsMatch = [...command.matchAll(/:([+-_a-z0-9]+?):/g)];
+            const mentionedReactions = reactionsMatch.map(m => m[1])
             const mentionedUsers = [...command.matchAll(/<@(.+?)>/g)].map(m => m[1])
+
+            if(mentionedReactions.length === 0 || mentionedUsers.length === 0){
+                await bot.reply(message, 'Usage: karma <reactions> <users>')
+                return
+            }
 
             const scores = await orm.em.createQueryBuilder(Reaction)
                 .select('count(0) as count')

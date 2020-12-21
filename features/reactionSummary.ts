@@ -49,13 +49,20 @@ export function renderLeaderboard(leaders: Array<[string, ReactionSummaryItem[]]
 export default (controller: Botkit) => {
     controller.on('app_mention', async (bot, message) => {
         const plainMessage = messagePlainText(message)
+
+        const reqMonthly = plainMessage.indexOf('monthly') > -1;
+        const reqWeekly = plainMessage.indexOf('weekly') > -1;
+        if (!(reqMonthly || reqWeekly)) { // not calling this report
+            return
+        }
+
         if (plainMessage.indexOf('?') < 0 || plainMessage.indexOf('help') > -1) {
             await bot.reply(message, `Usage: @achievements [global] <monthly|weekly> [minCount=number,1-100] *?*`)
             return
         }
 
         const channel = plainMessage.indexOf('global') > -1 ? undefined : message.channel
-        const timeframe = plainMessage.indexOf('monthly') > -1 ? MONTH : WEEK
+        const timeframe = reqMonthly ? MONTH : WEEK
 
         let minCount = timeframe == MONTH ? 16 : 4
         try{

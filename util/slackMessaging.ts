@@ -15,6 +15,10 @@ export interface SlackPostedMessage {
 }
 
 export function messagePlainText(message: BotkitMessage) {
+    if(message.incoming_message.channelData.text){
+        return message.incoming_message.channelData.text
+    }
+
     if (typeof message.text === 'string') {
         return message.text
     }
