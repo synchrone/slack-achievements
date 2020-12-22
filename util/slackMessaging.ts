@@ -1,5 +1,5 @@
 import {SlackBotWorker} from "botbuilder-adapter-slack";
-import {Botkit, BotkitMessage, BotWorker} from "botkit";
+import {BotkitMessage, BotWorker} from "botkit";
 import {getSettings} from "./settings";
 
 export interface SlackDirectMessage extends BotkitMessage {
@@ -55,10 +55,10 @@ export function slackMarkdownResponse(markdown: string) {
     };
 }
 
-export async function reply(bot: BotWorker | SlackBotWorker, message: BotkitMessage, response: string) {
+export async function reply(bot: BotWorker | SlackBotWorker, message: BotkitMessage, response: string, useOutputChannel: boolean = true) {
     if (bot instanceof SlackBotWorker) {
         const outputChannel = (await getSettings(message.team)).get('outputChannel');
-        if (outputChannel && outputChannel !== message.channel) {
+        if (useOutputChannel && outputChannel && outputChannel !== message.channel) {
             const posted = await bot.say({channel: outputChannel, ...slackMarkdownResponse(response)}) as SlackPostedMessage
             await bot.replyInThread(message, `<https://app.slack.com/client/${message.team}/${outputChannel}/${posted.id}|Replied> in <#${outputChannel}>`)
         } else {

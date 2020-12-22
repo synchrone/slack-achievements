@@ -1,35 +1,42 @@
 import {Botkit} from "botkit";
 import { orm } from "../mikro-orm.config";
 import {Reaction} from "../models/reaction";
-import {messagePlainText, SlackDirectMessage, reply} from "../util/slackMessaging";
+import {messagePlainText, reply} from "../util/slackMessaging";
+
+const topListLength = 50
+const defaultGoodKarma = ':thumbsup: :+1: :heavy_plus_sign: :thanks: :heavy_check_mark:'
+    .replace(/:/g, '')
+    .split(' ')
 
 export default (controller: Botkit) => {
     controller.on('app_mention', async (bot, message) => {
-        const event = message as SlackDirectMessage
         const command = messagePlainText(message)
 
         if(command.indexOf('karma') >-1  && command.indexOf('?') >-1 ){
             let reactionsMatch = [...command.matchAll(/:([+-_a-z0-9]+?):/g)];
-            const mentionedReactions = reactionsMatch.map(m => m[1])
+            let mentionedReactions = reactionsMatch.map(m => m[1])
             const mentionedUsers = [...command.matchAll(/<@(.+?)>/g)].map(m => m[1])
 
-            if(mentionedReactions.length === 0 || mentionedUsers.length === 0){
-                await bot.reply(message, 'Usage: karma <reactions> <users>')
-                return
+            if(mentionedReactions.length === 0){
+                mentionedReactions = defaultGoodKarma
             }
 
-            const scores = await orm.em.createQueryBuilder(Reaction)
+            let scoresQ = await orm.em.createQueryBuilder(Reaction)
                 .select('count(0) as count')
                 .addSelect('to_user')
-                .addSelect('reaction')
                 .groupBy(['to_user'])
                 .where({ reaction: {$in: mentionedReactions }})
-                .andWhere({ toUser: {$in: mentionedUsers }})
                 .orderBy({[`count(0)`]: 'DESC'})
-                .execute()
 
+            if(mentionedUsers.length > 1){ // one user is always this bot, because the event is app_mention
+                scoresQ = scoresQ.andWhere({ toUser: {$in: mentionedUsers }})
+            }else{
+                scoresQ = scoresQ.limit(topListLength)
+            }
+
+            const scores = await scoresQ.execute()
             if(scores.length === 0){
-                await bot.reply(message, 'not enough of these reactions for these users')
+                await bot.reply(message, 'not enough reactions for users')
                 return
             }
 
